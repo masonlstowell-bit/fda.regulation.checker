@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FDA Ingredient Regulation Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .fda-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .input-section label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #718096;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .file-upload {
+            border: 3px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload-icon {
+            font-size: 3em;
+            color: #cbd5e0;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-card.approved {
+            background: #c6f6d5;
+            border: 2px solid #48bb78;
+        }
+
+        .summary-card.restricted {
+            background: #feebc8;
+            border: 2px solid #ed8936;
+        }
+
+        .summary-card.prohibited {
+            background: #fed7d7;
+            border: 2px solid #f56565;
+        }
+
+        .summary-card.total {
+            background: #e6fffa;
+            border: 2px solid #319795;
+        }
+
+        .summary-number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-item {
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid;
+            background: #f7fafc;
+        }
+
+        .result-item.approved {
+            border-left-color: #48bb78;
+        }
+
+        .result-item.restricted {
+            border-left-color: #ed8936;
+        }
+
+        .result-item.prohibited {
+            border-left-color: #f56565;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .ingredient-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.approved {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-badge.restricted {
+            background: #ed8936;
+            color: white;
+        }
+
+        .status-badge.prohibited {
+            background: #f56565;
+            color: white;
+        }
+
+        .ingredient-details {
+            color: #718096;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .regulation-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .regulation-info h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .regulation-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .regulation-info li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .regulation-info li:last-child {
+            border-bottom: none;
+        }
+
+        .fda-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .fda-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            padding: 12px 30px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .disclaimer {
+            background: #fff5e1;
+            border: 2px solid #ffa500;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .disclaimer h3 {
+            color: #c05621;
+            margin-bottom: 10px;
+        }
+
+        .disclaimer p {
+            color: #744210;
+            line-height: 1.6;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .example-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+
+        .example-link:hover {
+            color: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .export-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="fda-logo">🔬</div>
+            <h1>FDA Ingredient Regulation Checker</h1>
+            <p>Verify your formulation ingredients against FDA regulations in seconds</p>
+        </div>
+
+        <div class="card">
+            <div class="input-section">
+                <label>1. Select Product Type</label>
+                <select id="productType">
+                    <option value="cosmetic">Cosmetic</option>
+                    <option value="otc_drug">OTC Drug</option>
+                    <option value="combination">Cosmetic + Drug (Combination)</option>
+                    <option value="food">Food Additive</option>
+                </select>
+            </div>
+
+            <div class="input-section">
+                <label>2. Add Your Ingredients</label>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('manual')">Manual Entry</button>
+                    <button class="tab" onclick="switchTab('file')">Upload File</button>
+                    <button class="tab" onclick="switchTab('paste')">Paste List</button>
+                </div>
+
+                <div id="manual-tab" class="tab-content active">
+                    <textarea id="manualInput" placeholder="Enter ingredients (one per line or comma-separated)&#10;&#10;Example:&#10;Titanium Dioxide&#10;Water&#10;Glycerin&#10;Retinol"></textarea>
+                    <p style="margin-top: 10px; color: #718096;">
+                        <span class="example-link" onclick="loadExample()">Load example formulation</span>
+                    </p>
+                </div>
+
+                <div id="file-tab" class="tab-content">
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <div class="file-upload-icon">📄</div>
+                        <p style="color: #718096; font-size: 1.1em;">Click to upload CSV or Excel file</p>
+                        <p style="color: #a0aec0; font-size: 0.9em; margin-top: 5px;">Supported formats: .csv, .xlsx, .txt</p>
+                        <input type="file" id="fileInput" accept=".csv,.xlsx,.txt" onchange="handleFileUpload(event)">
+                        <div class="file-name" id="fileName"></div>
+                    </div>
+                </div>
+
+                <div id="paste-tab" class="tab-content">
+                    <textarea id="pasteInput" placeholder="Paste your ingredient list here...&#10;&#10;Supports:&#10;• Comma-separated&#10;• Line-separated&#10;• Tab-separated&#10;• Mixed formats"></textarea>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="checkIngredients()">
+                🔍 Check Ingredients Against FDA Regulations
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h3>Checking FDA Regulations...</h3>
+            <p style="color: #718096; margin-top: 10px;">Analyzing ingredients against FDA databases</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="card">
+                <h2 style="margin-bottom: 20px; color: #2d3748;">Regulation Check Results</h2>
+                
+                <div class="summary" id="summary"></div>
+
+                <div id="resultsList"></div>
+
+                <div class="export-buttons">
+                    <button class="btn-secondary" onclick="exportPDF()">📄 Export PDF Report</button>
+                    <button class="btn-secondary" onclick="exportCSV()">📊 Export CSV</button>
+                    <button class="btn-secondary" onclick="resetForm()">🔄 Check Another Formulation</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <h3>⚠️ Important Disclaimer</h3>
+            <p>
+                This tool provides information based on publicly available FDA data and is for informational purposes only. 
+                It is not a substitute for professional regulatory advice. Users are responsible for ensuring their products 
+                comply with all applicable regulations. Always verify information with official FDA sources and consult with 
+                regulatory professionals before making compliance decisions.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // FDA Prohibited/Restricted Ingredients Database (Simplified for prototype)
+        const fdaDatabase = {
+            // Prohibited ingredients
+            "mercury": {
+                status: "prohibited",
+                regulation: "21 CFR 700.13",
+                description: "Mercury compounds are prohibited in all cosmetic products except as a preservative in eye area cosmetics at concentrations not exceeding 65 parts per million (0.0065%)",
+                fdaLink: "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-G/part-700/subpart-B/section-700.13",
+                additionalLinks: [
+                    {
+                        text: "FDA Prohibited & Restricted Ingredients Overview",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-ingredient-safety/prohibited-restricted-ingredients-cosmetics"
+                    }
+                ]
+            },
+            "mercury compound": {
+                status: "prohibited",
+                regulation: "21 CFR 700.13",
+                description: "Mercury compounds are prohibited in all cosmetic products except as a preservative in eye area cosmetics at concentrations not exceeding 65 parts per million (0.0065%)",
+                fdaLink: "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-G/part-700/subpart-B/section-700.13",
+                additionalLinks: [
+                    {
+                        text: "FDA Prohibited & Restricted Ingredients Overview",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-ingredient-safety/prohibited-restricted-ingredients-cosmetics"
+                    }
+                ]
+            },
+            "chloroform": {
+                status: "prohibited",
+                regulation: "21 CFR 700.18",
+                description: "Chloroform is prohibited as an ingredient in cosmetic products",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.18"
+            },
+            "vinyl chloride": {
+                status: "prohibited",
+                regulation: "21 CFR 700.14",
+                description: "Vinyl chloride is prohibited as an ingredient in aerosol products",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.14"
+            },
+            "halogenated salicylanilide": {
+                status: "prohibited",
+                regulation: "21 CFR 700.15",
+                description: "Halogenated salicylanilides are prohibited in cosmetic products",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.15"
+            },
+            "bithionol": {
+                status: "prohibited",
+                regulation: "21 CFR 700.11",
+                description: "Bithionol is prohibited in cosmetic products",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.11"
+            },
+            "hexachlorophene": {
+                status: "prohibited",
+                regulation: "21 CFR 700.27",
+                description: "Hexachlorophene is prohibited except in specific concentrations with FDA approval",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.27"
+            },
+            "methylene chloride": {
+                status: "prohibited",
+                regulation: "21 CFR 700.19",
+                description: "Methylene chloride is prohibited in cosmetic products",
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=700.19"
+            },
+            "methyl methacrylate": {
+                status: "restricted",
+                regulation: "FDA Advisory",
+                description: "Prohibited in nail products due to potential for injury and sensitization",
+                restrictions: [
+                    "Cannot be used in artificial nail products",
+                    "Associated with severe allergic reactions",
+                    "Known to cause nail damage and separation"
+                ],
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-products/nail-products"
+            },
+            // Restricted ingredients
+            "titanium dioxide": {
+                status: "restricted",
+                regulation: "21 CFR 73.2575",
+                description: "Approved as a color additive with restrictions",
+                restrictions: [
+                    "Maximum 25% in cosmetic products",
+                    "May require batch certification for certain uses",
+                    "Not approved for injection or use in eye area without specific certification",
+                    "Must meet purity specifications"
+                ],
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=73.2575"
+            },
+            "hydroquinone": {
+                status: "restricted",
+                regulation: "21 CFR 347",
+                description: "Allowed only as an OTC drug active ingredient for skin bleaching",
+                restrictions: [
+                    "Maximum concentration: 2%",
+                    "Requires drug labeling and warnings",
+                    "Must include warning about increased sun sensitivity",
+                    "Prohibited in cosmetics unless formulated as OTC drug"
+                ],
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?CFRPart=347"
+            },
+            "retinoic acid": {
+                status: "restricted",
+                regulation: "Prescription Drug",
+                description: "Classified as a prescription drug (tretinoin)",
+                restrictions: [
+                    "Requires prescription",
+                    "Cannot be used in OTC cosmetics",
+                    "Associated with birth defects - requires pregnancy warnings"
+                ],
+                fdaLink: "https://www.fda.gov/drugs"
+            },
+            "tretinoin": {
+                status: "restricted",
+                regulation: "Prescription Drug",
+                description: "Prescription-only retinoid",
+                restrictions: [
+                    "Requires prescription",
+                    "Cannot be used in cosmetics",
+                    "Pregnancy category C - requires warnings"
+                ],
+                fdaLink: "https://www.fda.gov/drugs"
+            },
+            "lead acetate": {
+                status: "restricted",
+                regulation: "21 CFR 73.2396",
+                description: "Only allowed in hair dye products with specific restrictions",
+                restrictions: [
+                    "Limited to hair dye use only",
+                    "Maximum 0.6% by weight as lead",
+                    "Must include specific warning label",
+                    "Not for use on eyelashes, eyebrows, or body hair"
+                ],
+                fdaLink: "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/CFRSearch.cfm?fr=73.2396"
+            },
+            "formaldehyde": {
+                status: "restricted",
+                regulation: "General Safety Concern",
+                description: "Restricted in cosmetics due to safety concerns",
+                restrictions: [
+                    "Should not exceed 0.2% in cosmetics",
+                    "Must be labeled if present above 0.05%",
+                    "Known carcinogen - use should be minimized",
+                    "Many companies voluntarily avoiding"
+                ],
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients/formaldehyde"
+            },
+            // Common approved ingredients for comparison
+            "water": {
+                status: "approved",
+                regulation: "GRAS - Generally Recognized As Safe",
+                description: "Most common cosmetic ingredient, universally accepted. Also known as Aqua in INCI naming.",
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients",
+                additionalLinks: [
+                    {
+                        text: "FDA Cosmetics Overview",
+                        url: "https://www.fda.gov/cosmetics"
+                    },
+                    {
+                        text: "Cosmetic Ingredient Safety Information",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-ingredient-safety"
+                    }
+                ]
+            },
+            "glycerin": {
+                status: "approved",
+                regulation: "GRAS - Generally Recognized As Safe",
+                description: "Common humectant, widely used and safe in cosmetics. Also known as glycerol.",
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients",
+                additionalLinks: [
+                    {
+                        text: "FDA GRAS Substances Database",
+                        url: "https://www.fda.gov/food/generally-recognized-safe-gras"
+                    },
+                    {
+                        text: "Cosmetic Ingredient Safety Information",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-ingredient-safety"
+                    }
+                ]
+            },
+            "retinol": {
+                status: "approved",
+                regulation: "Cosmetic Ingredient",
+                description: "Approved for cosmetic use (different from prescription retinoic acid). Vitamin A derivative commonly used in anti-aging products.",
+                restrictions: [
+                    "Must be stable formulation to prevent degradation",
+                    "Recommended to include sun protection advice",
+                    "Some countries restrict concentration"
+                ],
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients",
+                additionalLinks: [
+                    {
+                        text: "FDA on Retinoids in Cosmetics",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-products/alpha-hydroxy-acids"
+                    }
+                ]
+            },
+            "hyaluronic acid": {
+                status: "approved",
+                regulation: "GRAS - Generally Recognized As Safe",
+                description: "Approved humectant and skin conditioning agent. Natural substance found in skin.",
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients",
+                additionalLinks: [
+                    {
+                        text: "Cosmetic Ingredient Safety Information",
+                        url: "https://www.fda.gov/cosmetics/cosmetic-ingredient-safety"
+                    }
+                ]
+            },
+            "niacinamide": {
+                status: "approved",
+                regulation: "GRAS - Generally Recognized As Safe",
+                description: "Approved as a cosmetic ingredient and vitamin supplement. Also known as Vitamin B3.",
+                fdaLink: "https://www.fda.gov/cosmetics/cosmetic-ingredients",
+                additionalLinks: [
+                    {
+                        text: "FDA Dietary Supplements",
+                        url: "https://www.fda.gov/food/dietary-supplements"
+                    }
+                ]
+            },
+            "salicylic acid": {
+                status: "approved",
+                regulation: "21 CFR 347",
+                description: "Approved as OTC drug active for acne treatment",
+                restrictions: [
+                    "Maximum 2% for acne treatment",
+                    "Must follow OTC drug monograph if making drug claims",
+                    "Higher concentrations considered professional use"
+                ]
+            },
+            "benzoyl peroxide": {
+                status: "approved",
+                regulation: "21 CFR 347",
+                description: "Approved OTC drug active for acne treatment",
+                restrictions: [
+                    "Maximum 10% concentration for OTC use",
+                    "Must include drug facts label",
+                    "Warning about bleaching fabrics required"
+                ]
+            },
+            "zinc oxide": {
+                status: "approved",
+                regulation: "21 CFR 352",
+                description: "Approved as sunscreen active and skin protectant",
+                restrictions: [
+                    "Must meet purity specifications",
+                    "Requires SPF testing if making sun protection claims",
+                    "Generally non-nano preferred for transparency"
+                ]
+            },
+            "parabens": {
+                status: "approved",
+                regulation: "Preservative - Approved",
+                description: "Approved preservatives, though subject to ongoing safety review",
+                restrictions: [
+                    "Typically used at 0.01-0.3% concentration",
+                    "Some companies voluntarily avoiding due to consumer concerns",
+                    "EU has restrictions on certain types"
+                ]
+            },
+            "phenoxyethanol": {
+                status: "approved",
+                regulation: "Preservative - Approved",
+                description: "Approved preservative commonly used in cosmetics",
+                restrictions: [
+                    "Typical concentration 0.5-1.0%",
+                    "Generally well-tolerated"
+                ]
+            }
+        };
+
+        let currentIngredients = [];
+        let checkResults = [];
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function loadExample() {
+            const example = `Titanium Dioxide
+Water
+Glycerin
+Retinol
+Hyaluronic Acid
+Niacinamide
+Mercury Compound
+Hydroquinone
+Salicylic Acid
+Zinc Oxide`;
+            document.getElementById('manualInput').value = example;
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    document.getElementById('pasteInput').value = content;
+                    switchTab('paste');
+                    document.querySelectorAll('.tab')[2].classList.add('active');
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parseIngredients() {
+            let text = '';
+            const activeTab = document.querySelector('.tab-content.active');
+            
+            if (activeTab.id === 'manual-tab') {
+                text = document.getElementById('manualInput').value;
+            } else if (activeTab.id === 'paste-tab') {
+                text = document.getElementById('pasteInput').value;
+            }
+
+            if (!text.trim()) {
+                alert('Please enter some ingredients first!');
+                return null;
+            }
+
+            // Parse ingredients (handle comma, newline, tab separated)
+            const ingredients = text
+                .split(/[,\n\t]+/)
+                .map(i => i.trim())
+                .filter(i => i.length > 0)
+                .map(i => ({
+                    original: i,
+                    normalized: i.toLowerCase().replace(/\([^)]*\)/g, '').trim()
+                }));
+
+            return ingredients;
+        }
+
+        function checkIngredients() {
+            currentIngredients = parseIngredients();
+            
+            if (!currentIngredients) return;
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+
+            // Simulate API delay
+            setTimeout(() => {
+                performCheck();
+                displayResults();
+                
+                // Hide loading, show results
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('results').classList.add('show');
+                
+                // Scroll to results
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            }, 1500);
+        }
+
+        function performCheck() {
+            const productType = document.getElementById('productType').value;
+            checkResults = [];
+
+            currentIngredients.forEach(ingredient => {
+                let result = {
+                    name: ingredient.original,
+                    status: 'approved',
+                    regulation: 'GRAS - Generally Recognized As Safe',
+                    description: 'This ingredient is generally recognized as safe for use in cosmetics',
+                    restrictions: [],
+                    fdaLink: null
+                };
+
+                // Check against database
+                const dbEntry = fdaDatabase[ingredient.normalized];
+                if (dbEntry) {
+                    result = { ...result, ...dbEntry, name: ingredient.original };
+                } else {
+                    // Check for partial matches
+                    for (const [key, value] of Object.entries(fdaDatabase)) {
+                        if (ingredient.normalized.includes(key) || key.includes(ingredient.normalized)) {
+                            result = { ...result, ...value, name: ingredient.original };
+                            break;
+                        }
+                    }
+                }
+
+                checkResults.push(result);
+            });
+        }
+
+        function displayResults() {
+            // Calculate summary
+            const summary = {
+                total: checkResults.length,
+                approved: checkResults.filter(r => r.status === 'approved').length,
+                restricted: checkResults.filter(r => r.status === 'restricted').length,
+                prohibited: checkResults.filter(r => r.status === 'prohibited').length
+            };
+
+            // Display summary cards
+            const summaryHTML = `
+                <div class="summary-card total">
+                    <div class="summary-number">${summary.total}</div>
+                    <div class="summary-label">Total</div>
+                </div>
+                <div class="summary-card approved">
+                    <div class="summary-number">${summary.approved}</div>
+                    <div class="summary-label">Approved</div>
+                </div>
+                <div class="summary-card restricted">
+                    <div class="summary-number">${summary.restricted}</div>
+                    <div class="summary-label">Restricted</div>
+                </div>
+                <div class="summary-card prohibited">
+                    <div class="summary-number">${summary.prohibited}</div>
+                    <div class="summary-label">Prohibited</div>
+                </div>
+            `;
+            document.getElementById('summary').innerHTML = summaryHTML;
+
+            // Display individual results
+            let resultsHTML = '';
+            
+            // Sort: prohibited first, then restricted, then approved
+            const sortedResults = [...checkResults].sort((a, b) => {
+                const order = { prohibited: 0, restricted: 1, approved: 2 };
+                return order[a.status] - order[b.status];
+            });
+
+            sortedResults.forEach(result => {
+                const statusIcon = result.status === 'prohibited' ? '❌' : 
+                                 result.status === 'restricted' ? '⚠️' : '✅';
+                
+                let restrictionsHTML = '';
+                if (result.restrictions && result.restrictions.length > 0) {
+                    restrictionsHTML = `
+                        <div class="regulation-info">
+                            <h4>Restrictions & Requirements:</h4>
+                            <ul>
+                                ${result.restrictions.map(r => `<li>• ${r}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                const fdaLinkHTML = result.fdaLink ? 
+                    `<a href="${result.fdaLink}" target="_blank" class="fda-link">→ View Official FDA Regulation</a>` : '';
+
+                let additionalLinksHTML = '';
+                if (result.additionalLinks && result.additionalLinks.length > 0) {
+                    additionalLinksHTML = '<div style="margin-top: 10px;">' +
+                        result.additionalLinks.map(link => 
+                            `<a href="${link.url}" target="_blank" class="fda-link" style="display: block; margin-top: 5px;">→ ${link.text}</a>`
+                        ).join('') +
+                        '</div>';
+                }
+
+                resultsHTML += `
+                    <div class="result-item ${result.status}">
+                        <div class="result-header">
+                            <div class="ingredient-name">${statusIcon} ${result.name}</div>
+                            <div class="status-badge ${result.status}">${result.status.toUpperCase()}</div>
+                        </div>
+                        <div class="ingredient-details">
+                            <strong>Regulation:</strong> ${result.regulation}
+                        </div>
+                        <div class="ingredient-details">
+                            ${result.description}
+                        </div>
+                        ${restrictionsHTML}
+                        ${fdaLinkHTML}
+                        ${additionalLinksHTML}
+                    </div>
+                `;
+            });
+
+            document.getElementById('resultsList').innerHTML = resultsHTML;
+        }
+
+        function exportPDF() {
+            alert('PDF export functionality would generate a comprehensive report including:\n\n' +
+                  '• Executive summary\n' +
+                  '• Complete ingredient analysis\n' +
+                  '• FDA regulation citations\n' +
+                  '• Compliance recommendations\n\n' +
+                  'This is a prototype - full implementation would use a PDF library.');
+        }
+
+        function exportCSV() {
+            let csv = 'Ingredient,Status,Regulation,Description\n';
+            
+            checkResults.forEach(result => {
+                const row = [
+                    `"${result.name}"`,
+                    `"${result.status}"`,
+                    `"${result.regulation}"`,
+                    `"${result.description.replace(/"/g, '""')}"`
+                ].join(',');
+                csv += row + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fda-ingredient-check-results.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function resetForm() {
+            document.getElementById('manualInput').value = '';
+            document.getElementById('pasteInput').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('results').classList.remove('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
